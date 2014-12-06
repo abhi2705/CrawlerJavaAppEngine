@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -20,37 +19,31 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.swing.JOptionPane;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.mortbay.util.ajax.JSON;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Text;
-
-
 
 /**
  * Servlet implementation class Query
  */
-public class CrawlerServlet extends HttpServlet {
+public class ReadPrintJSON extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	List<String> revList = new ArrayList<String>();
-	List<String> dateList = new ArrayList<String>();
-	List<String> titleList = new ArrayList<String>();
-	List<String> starList = new ArrayList<String>();   
+	static List<String> revList = new ArrayList<String>();
+	static List<String> dateList = new ArrayList<String>();
+	static List<String> titleList = new ArrayList<String>();
+	static List<String> starList = new ArrayList<String>();   
 	
 	
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public CrawlerServlet() {
+    public ReadPrintJSON() {
         super();
         
         // TODO Auto-generated constructor stub
@@ -61,114 +54,57 @@ public class CrawlerServlet extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
 	{
+		response.setContentType("text/html");
 		// TODO Auto-generated method stub
+		PrintWriter out = response.getWriter();
+		JSONParser parser = new JSONParser();
+		URL url = ReadPrintJSON.class.getResource("samplejson.txt");
+        String filepath = url.getPath();
+        System.out.println(filepath);
+        out.println("FILE PATh ="+filepath);
+		Object obj;
+		try {
+			obj = parser.parse(new FileReader(filepath));
+			
+			JSONObject jsonObject = (JSONObject) obj;
+			
 		
+			
+			JSONArray dateArray= (JSONArray) jsonObject.get("Review-Date");
+			JSONArray titleArray= (JSONArray) jsonObject.get("Review-Title");
+			JSONArray ratingArray= (JSONArray) jsonObject.get("RatingStars-List");
+			JSONArray reviewsArray= (JSONArray) jsonObject.get("Reviews");
+			out.print("<table border='2'>");
+			for(int h=0;h<dateArray.size();h++)
+			{
+			out.println("<tr>");
+			out.println("<td>"+dateArray.get(h)+"</td><td>"+ratingArray.get(h)+"</td><td>"+titleArray.get(h)+"</td><td>"+reviewsArray.get(h)+"</td>");
+			out.println("</tr>");
+			}
+			out.print("</table>");
+			out.println("-----------------------------------------------------------");
+			out.println("JSON is\n"+jsonObject);
+			
+			
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		 
+
 
 	}
     
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+	{
 		// TODO Auto-generated method stub
 		
-		PrintWriter out = response.getWriter();
-		String baseUrl = request.getParameter("url");
-		String pageValue = request.getParameter("pageValue");
-		out.println("Url ="+baseUrl+pageValue);
-		
-		
-		//String baseUrl = "http://www.flipkart.com/samsung-galaxy-note-2-n7100/product-reviews/ITMDHM3NUFYRRQKP?pid=MOBDDPH4CUB2Q3FU&rating=1,2,3,4,5&reviewers=all&type=top&sort=most_helpful&start=";
-		String temp;
-		//System.out.println(baseUrl);
-		//int i = Integer.parseInt(name);
-		//int i=380;
-		int i = Integer.parseInt(pageValue);
-		
-		JSONObject obj = new JSONObject();
-		revList = new ArrayList<String>();
-		dateList = new ArrayList<String>();
-		titleList = new ArrayList<String>();
-		starList = new ArrayList<String>();   
-		
-		
-		while(true)
-			{
-				temp = baseUrl + i;
-				System.out.println(temp);
-				out.println(temp);
-				if(DataFunnel(temp).equals(""))
-					{	
-						System.out.println("No More pages to crawl");
-			        	System.out.println("Stop Page Link = "+temp);
-			        	System.out.println("byeeeeeeeeeeeeee");
-			        	break;
-			        }
-				i=i+10;
 			}
-		
 
-		try {
-			obj.put("RatingStars-List",   starList);
-			obj.put("Reviews",  revList);
-			obj.put("Review-Date",  dateList);
-			obj.put("Review-Title",  titleList);
-			
-			System.out.println(obj.get("Review-Date"));
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-		
-		
-		Key key1 = KeyFactory.createKey("Key1", "Reviews1");
-	    //String content = req.getParameter("content");
-	    
-		Object data = obj;
-		
-	    Text content = new Text(data.toString());
-	    
-	    Date date = new Date();
-	    Entity d = new Entity("ReviewsData", key1);
-	    //d.setProperty("user", user);
-	    d.setProperty("date", date);
-	    d.setProperty("content", content);
-	    
-	    String summary = (String) d.getProperty("summary");
-	    
-	    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-	    datastore.put(d);
-
-	    //resp.sendRedirect("/guestbook.jsp?guestbookName=" + guestbookName);
-
-		
-		
-		
-//		PrintWriter writerjson = new PrintWriter(new FileWriter("Note2-JSONData.json", true));
-//		writerjson.println(obj);
-//		writerjson.close();
-	    out.println("\n\n\nSummary = "+summary+"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-	    
-		out.println("Hello World1");
-
-		out.println(starList);
-		out.println("-------------------------------------- The Final JSON is --------------------------------------");
-		out.println(obj);
-
-		obj = null;
-		
-		out.println("\n\n\n\n\n\n\n-------------------------------------- The Final JSON is --------------------------------------");
-		out.println(obj);
-		
-		out.close();
-		
-		out.flush();
-		
-	}
-
-	public String DataFunnel(String link) {
+	public static String DataFunnel(String link) {
 	    org.jsoup.nodes.Document doc;
 	    Elements reviews = null;
 	    //String urlNextPage = new String();
@@ -176,12 +112,14 @@ public class CrawlerServlet extends HttpServlet {
 //	    	PrintWriter writer = new PrintWriter(new FileWriter("note2.txt", true));
 	        
 	    	// need http protocol
+	    	System.out.println("Amazon Reviews");
+	    	
 	        doc = Jsoup.connect(link).timeout(25000).get();
-	        reviews = doc.select("span[class=review-text]");
-	        Elements date = doc.select("div[class=date line fk-font-small]");
+	        reviews = doc.select("div[class=reviewText]");
+	        Elements date = doc.select("nobr[class=date line fk-font-small]");
 	        Elements reviewHeading = doc.select("div[class=line fk-font-normal bmargin5 dark-gray]");
 	        String title = doc.title();
-	        Elements s = doc.select("div[class=fk-stars]");
+	        Elements s = doc.select("span[class=swSprite s_star_5_0 ]");
 	        Element tempelement;
 	        for(int i = 0;i<s.size();i++)
 	        {

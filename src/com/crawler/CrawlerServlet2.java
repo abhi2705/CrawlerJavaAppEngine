@@ -1,38 +1,87 @@
 package com.crawler;
 
-import java.io.*;
+
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+ 
+
 import java.io.PrintWriter;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.swing.JOptionPane;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 import org.mortbay.util.ajax.JSON;
 
 
-public class DataExtractor {
-	
+/**
+ * Servlet implementation class Query
+ */
+public class CrawlerServlet2 extends HttpServlet {
+	private static final long serialVersionUID = 1L;
 	static List<String> revList = new ArrayList<String>();
 	static List<String> dateList = new ArrayList<String>();
 	static List<String> titleList = new ArrayList<String>();
-	static List<String> starList = new ArrayList<String>();
-	public static void main(String[] args) throws IOException, JSONException
+	static List<String> starList = new ArrayList<String>();   
+	
+	
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public CrawlerServlet2() {
+        super();
+        
+        // TODO Auto-generated constructor stub
+    }
+
+    	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
 	{
+		// TODO Auto-generated method stub
+		
+
+	}
+    
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		
+		PrintWriter out = response.getWriter();
+		//String baseUrl = request.getParameter("url");
+		//String pageValue = request.getParameter("pageValue");
+		//out.println("Url ="+baseUrl+pageValue);
+		
 		String baseUrl = "http://www.amazon.in/product-reviews/B00GC1J55C/ref=cm_cr_pr_top_link_3?ie=UTF8&pageNumber=3&showViewpoints=0&sortBy=byRankDescending";
+		//String baseUrl = "http://www.flipkart.com/samsung-galaxy-note-2-n7100/product-reviews/ITMDHM3NUFYRRQKP?pid=MOBDDPH4CUB2Q3FU&rating=1,2,3,4,5&reviewers=all&type=top&sort=most_helpful&start=";
 		String temp;
 		//System.out.println(baseUrl);
-		int i=380;
-
+		//int i = Integer.parseInt(name);
+		//int i=380;
+		//int i = Integer.parseInt(pageValue);
+		
 		JSONObject obj = new JSONObject();
 		//while(true)
 			//{
-				temp = baseUrl;
+				temp = baseUrl ;
 				System.out.println(temp);
+				out.println(temp);
 				if(DataFunnel(temp).equals(""))
 					{	
 						System.out.println("No More pages to crawl");
@@ -40,52 +89,65 @@ public class DataExtractor {
 			        	System.out.println("byeeeeeeeeeeeeee");
 			        	//break;
 			        }
-				i=i+10;
-			//}
+				//i=i+10;
+		//	}
 		
 
-		obj.put("RatingStars-List", starList);
-		obj.put("Reviews", revList);
-		obj.put("Review-Date", dateList);
-		obj.put("Review-Title", titleList);
+		try {
+			obj.put("RatingStars-List",   starList);
+			obj.put("Reviews",  revList);
+			obj.put("Review-Date",  dateList);
+			obj.put("Review-Title",  titleList);
+			
+			System.out.println(obj.get("Review-Date"));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		
 		
-		PrintWriter writerjson = new PrintWriter(new FileWriter("amazon.json", true));
-		writerjson.println(obj);
-		writerjson.close();
 		
-		System.out.println(obj.get("Review-Date"));
+//		PrintWriter writerjson = new PrintWriter(new FileWriter("Note2-JSONData.json", true));
+//		writerjson.println(obj);
+//		writerjson.close();
+		out.println("Hello World1");
+
+		out.println(starList);
+		out.println("-------------------------------------- The Final JSON is --------------------------------------");
+		out.println(obj);
+			
+		
+		
+		
+		
 	}
-	
-	
+
 	public static String DataFunnel(String link) {
 	    org.jsoup.nodes.Document doc;
 	    Elements reviews = null;
 	    //String urlNextPage = new String();
 	    try {
-	    	PrintWriter writer = new PrintWriter(new FileWriter("amazonn.txt", true));
+//	    	PrintWriter writer = new PrintWriter(new FileWriter("note2.txt", true));
 	        
 	    	// need http protocol
+	    	System.out.println("Amazon Reviews");
+	    	
 	        doc = Jsoup.connect(link).timeout(25000).get();
 	        reviews = doc.select("div[class=reviewText]");
-	        Elements date = doc.select("span[class=swSprite s_star_5_0]");
-	        Elements reviewHeading = doc.select("span[style=vertical-align:middle;]");
+	        Elements date = doc.select("nobr[class=date line fk-font-small]");
+	        Elements reviewHeading = doc.select("div[class=line fk-font-normal bmargin5 dark-gray]");
 	        String title = doc.title();
-	        
-	        
-	        //Elements s = doc.select("div[class=fk-stars]");
+	        Elements s = doc.select("span[class=swSprite s_star_5_0 ]");
 	        Element tempelement;
-	        for(int i = 0;i<reviews.size();i++)
+	        for(int i = 0;i<s.size();i++)
 	        {
-	            tempelement = date.get(i);
+	            tempelement = s.get(i);
 	            starList.add(tempelement.attr("title").replaceAll(" stars", ""));
 	            dateList.add(((Element) date.toArray()[i]).text());
 	            revList.add(((Element) reviews.toArray()[i]).text());
-	            System.out.println(((Element) reviews.toArray()[i]).text());
 	            titleList.add(((Element) reviewHeading.toArray()[i]).text());
 	        }
-	        
 	        
 	        
 //	        System.out.println("-----------------------Star Lists --------" + starList);
@@ -98,11 +160,11 @@ public class DataExtractor {
 	        //System.out.println("-----------------------Date --------" + date);
 	        //System.out.println("-----------------------ReviewHeading --------" + reviewHeading);
 	        
-	        writer.println("Page Title : " + title);
-	        writer.println("PresentPageURL = "+ link);
-	        writer.println("-----------------------Reviews --------" + reviews);
-	        writer.println("-----------------------Date --------" + date);
-	        writer.println("-----------------------ReviewHeading --------" + reviewHeading);
+//	        writer.println("Page Title : " + title);
+//	        writer.println("PresentPageURL = "+ link);
+//	        writer.println("-----------------------Reviews --------" + reviews);
+//	        writer.println("-----------------------Date --------" + date);
+//	        writer.println("-----------------------ReviewHeading --------" + reviewHeading);
 	        
 	        
 	        
@@ -122,7 +184,7 @@ public class DataExtractor {
 	        // get page title
 	        //System.out.println("title : " + title);
 
-	        writer.close();
+//	        writer.close();
 	        
 	        // get all links
 //	        Elements links = doc.select("a[href]");
@@ -148,5 +210,6 @@ public class DataExtractor {
         
 	}
 
+	
 }
 
